@@ -48,7 +48,7 @@ func post(url string, payload map[string]string, jsonRes interface{}) error {
 	return toJSON(res.Body, jsonRes)
 }
 
-func fetchSeconds(user User, projects Projects, from, till string) (int, error) {
+func fetchSeconds(user userInfo, projects projectsInfo, from, till string) (int, error) {
 
 	// generate query url
 	query := url.Values{}
@@ -83,10 +83,10 @@ func fetchSeconds(user User, projects Projects, from, till string) (int, error) 
 	return secondsTotal, nil
 }
 
-func getTopTrackerInfo(email, password string) (TopTrackerInfo, error) {
-	info := TopTrackerInfo{}
+func getTopTrackerInfo(email, password string) (topTrackerInfo, error) {
+	info := topTrackerInfo{}
 	creds := map[string]string{"email": email, "password": password}
-	var user User
+	var user userInfo
 
 	// get token and user id
 	if err := post("/sessions", creds, &user); err != nil {
@@ -97,7 +97,7 @@ func getTopTrackerInfo(email, password string) (TopTrackerInfo, error) {
 	}
 
 	// get available project ids
-	var projects Projects
+	var projects projectsInfo
 	if err := get(fmt.Sprintf("/projects?access_token=%s", user.Token), &projects); err != nil {
 		return info, err
 	}
