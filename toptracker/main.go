@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"time"
 
 	"github.com/spf13/viper"
 )
@@ -10,24 +12,60 @@ const appName = "toptracker"
 const configPath = "$HOME/.toptracker"
 
 const secondsInHour = 60 * 60
+const dailyWorkOutSeconds = 6.5 * secondsInHour
 
 func hours(seconds int) string {
 	secondsLeft := seconds % secondsInHour
-	return fmt.Sprintf("%d:%d", seconds/secondsInHour, secondsLeft*60/secondsInHour)
+	return fmt.Sprintf("%d:%02d", seconds/secondsInHour, secondsLeft*60/secondsInHour)
 }
 
 func main() {
+	// get dates
+	now := time.Now()
+	firstOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.Local)
+	lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
+	prevOfMonth := now.AddDate(0, 0, -1)
+
+	// check if current year is supported
+	currentYear := now.Format("2006")
+	_, exists := supportedYears[currentYear]
+	if !exists {
+		log.Fatal("current year is not supported, please update working calendar")
+	}
+
+	// generate config on fist run
+	// 2DO
 
 	viper.SetConfigName(appName)
 	viper.AddConfigPath(configPath)
 	if err := viper.ReadInConfig(); err != nil {
-		panic(fmt.Errorf("Config read failure: %s", err))
+		log.Fatalf("Config read failure: %s", err)
 	}
 
-	info, err := getTopTrackerInfo(viper.GetString("email"), viper.GetString("password"))
+	// fetch information from the trecker
+	topTrackerInfo, err := getTopTrackerInfo(viper.GetString("email"), viper.GetString("password"))
 	if err != nil {
-		panic(err)
+		log.Fatal(err.Error())
 	}
+	daysInMonth := workingDaysInRange(firstOfMonth, lastOfMonth)
+	workSecondsInMonth := daysInMonth * dailyWorkOutSeconds
 
-	fmt.Printf("Worked total:\n\tper month - %s\n\tper day - %s\n", hours(info.SecondsPerMonth), hours(info.SecondsPerDay))
+	fmt.Printf("Working days in month: %d\n", daysInMonth)
+	fmt.Printf("Expected work (monthly / daily): %sh / %sh\n", hours(workSecondsInMonth), hours(dailyWorkOutSeconds))
+
+	fmt.Printf("Current work (done / left / effiency):\n")
+
+	secondsLeftInMonth := workSecondsInMonth - topTrackerInfo.SecondsPerMonth
+	secondsLeftInDay := dailyWorkOutSeconds - topTrackerInfo.SecondsPerDay
+	dailyEffiency := effiency(dailyWorkOutSeconds, topTrackerInfo.SecondsPerDay)
+
+	// montly effiency = how much I did in previous days
+	secondsDonePrev := topTrackerInfo.SecondsPerMonth - topTrackerInfo.SecondsPerDay
+	workingDaysPrev := workingDaysInRange(firstOfMonth, prevOfMonth)
+	secondsExpectPrev := workingDaysPrev * dailyWorkOutSeconds
+	montlyEffiency := effiency(secondsExpectPrev, secondsDonePrev)
+
+	fmt.Printf("\tMonthly - %s / %s / %d%%\n", hours(topTrackerInfo.SecondsPerMonth), hours(secondsLeftInMonth), montlyEffiency)
+	fmt.Printf("\tDaily - %s / %s / %d%%\n", hours(topTrackerInfo.SecondsPerDay), hours(secondsLeftInDay), dailyEffiency)
+
 }
