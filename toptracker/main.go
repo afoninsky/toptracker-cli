@@ -50,22 +50,21 @@ func main() {
 	daysInMonth := workingDaysInRange(firstOfMonth, lastOfMonth)
 	workSecondsInMonth := daysInMonth * dailyWorkOutSeconds
 
-	fmt.Printf("Working days in month: %d\n", daysInMonth)
-	fmt.Printf("Expected work (monthly / daily): %sh / %sh\n", hours(workSecondsInMonth), hours(dailyWorkOutSeconds))
-
-	fmt.Printf("Current work (done / left / effiency):\n")
-
-	secondsLeftInMonth := workSecondsInMonth - topTrackerInfo.SecondsPerMonth
-	secondsLeftInDay := dailyWorkOutSeconds - topTrackerInfo.SecondsPerDay
 	dailyEffiency := effiency(dailyWorkOutSeconds, topTrackerInfo.SecondsPerDay)
 
 	// montly effiency = how much I did in previous days
 	secondsDonePrev := topTrackerInfo.SecondsPerMonth - topTrackerInfo.SecondsPerDay
 	workingDaysPrev := workingDaysInRange(firstOfMonth, prevOfMonth)
 	secondsExpectPrev := workingDaysPrev * dailyWorkOutSeconds
-	montlyEffiency := effiency(secondsExpectPrev, secondsDonePrev)
+	monthlyEffiency := effiency(secondsExpectPrev, secondsDonePrev)
 
-	fmt.Printf("\tMonthly - %s / %s / %d%%\n", hours(topTrackerInfo.SecondsPerMonth), hours(secondsLeftInMonth), montlyEffiency)
-	fmt.Printf("\tDaily - %s / %s / %d%%\n", hours(topTrackerInfo.SecondsPerDay), hours(secondsLeftInDay), dailyEffiency)
-
+	fmt.Printf("\tNow %d of %d working days\n", workingDaysInRange(firstOfMonth, now), daysInMonth)
+	fmt.Printf("\tMonthly stats: %sh / %sh (%d%%)", hours(topTrackerInfo.SecondsPerMonth), hours(workSecondsInMonth), monthlyEffiency)
+	if secondsDonePrev > secondsExpectPrev {
+		fmt.Printf("\t%sh+", hours(secondsDonePrev-secondsExpectPrev))
+	} else {
+		fmt.Printf("\t%sh-", hours(secondsDonePrev-secondsExpectPrev))
+	}
+	fmt.Printf("\n")
+	fmt.Printf("\tDaily stats: %sh / %sh (%d%%)\n", hours(topTrackerInfo.SecondsPerDay), hours(dailyWorkOutSeconds), dailyEffiency)
 }
