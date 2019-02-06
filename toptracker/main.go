@@ -4,12 +4,7 @@ import (
 	"fmt"
 	"log"
 	"time"
-
-	"github.com/spf13/viper"
 )
-
-const appName = "toptracker"
-const configPath = "$HOME/.toptracker"
 
 const secondsInHour = 60 * 60
 const dailyWorkOutSeconds = 6.5 * secondsInHour
@@ -34,16 +29,14 @@ func main() {
 	}
 
 	// generate config on fist run
-	// 2DO
+	config, err := readConfig()
 
-	viper.SetConfigName(appName)
-	viper.AddConfigPath(configPath)
-	if err := viper.ReadInConfig(); err != nil {
+	if err != nil {
 		log.Fatalf("Config read failure: %s", err)
 	}
 
 	// fetch information from the trecker
-	topTrackerInfo, err := getTopTrackerInfo(viper.GetString("email"), viper.GetString("password"))
+	topTrackerInfo, err := getTopTrackerInfo(config.Email, config.Password)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
